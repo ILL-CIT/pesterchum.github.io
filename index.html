@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Local Chat</title>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+    }
+
+    #chat-window {
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,.1);
+      border-radius: 5px;
+    }
+
+    .chat-bubble {
+      margin-bottom: 20px;
+    }
+
+    .chat-bubble .username {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+    .chat-bubble .time {
+      font-size: 12px;
+      color: #aaa;
+      margin-left: 10px;
+    }
+
+    .chat-bubble .message {
+      margin-left: 20px;
+    }
+
+    .chat-input {
+      margin-top: 20px;
+    }
+
+    .chat-input input {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,.1);
+    }
+
+    .chat-input button {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-6 col-md-offset-3">
+        <div id="chat-window">
+          <div id="chat-messages"></div>
+          <div class="chat-input">
+            <input type="text" id="chat-message" placeholder="Type your message...">
+            <button type="button" class="btn btn-primary" id="send-message">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+  <script>
+    $(function() {
+      var username = generateUsername();
+      var seed = getSeed();
+      var socket = io.connect('http://localhost:3000');
+
+      function generateUsername() {
+        var adjectives = ["happy", "sad", "angry", "excited", "bored", "energetic", "calm", "confused", "curious", "disgusted", "grateful", "lonely", "proud", "shy", "surprised"];
+        var nouns = ["dog", "cat", "bird", "mouse", "elephant", "giraffe", "lion", "tiger", "monkey", "zebra", "horse", "snake", "bear", "fish", "turtle"];
+        var adjectiveIndex = Math.floor(Math.random() * adjectives.length);
+        var nounIndex = Math.floor(Math.random() * nouns.length);
+var adjective = adjectives[adjectiveIndex];
+var noun = nouns[nounIndex];
+return adjective + "-" + noun;
+}
+  function getSeed() {
+    var searchParams = new URLSearchParams(window.location.search);
+    return searchParams.get('seed');
+  }
+
+  function sendMessage() {
+    var message = $('#chat-message').val().trim();
+    if (message) {
+      var timestamp = new Date().toLocaleTimeString();
+      var data = {username: username, message: message, timestamp: timestamp};
+      socket.emit('chat-message', seed, data);
+      addMessageToUI(data);
+      $('#chat-message').val('');
+    }
+  }
+
+  function addMessageToUI(data) {
+    var username = data.username;
+    var message = data.message;
+    var timestamp = data.timestamp;
+    var messageBubble = '<div class="chat-bubble"><span class="username">' + username + ':</span><span class="message">' + message + '</span><span class="time">' + timestamp + '</span></div>';
+    $('#chat-messages').append(messageBubble);
+    $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
+  }
+
+  $('#send-message').click(function() {
+    sendMessage();
+  });
+
+  $('#chat-message').keypress(function(event) {
+    if (event.which === 13) {
+      sendMessage();
+    }
+  });
+
+  socket.on('connect', function() {
+    console.log('Connected to server');
+  });
+
+  socket.on('disconnect', function() {
+    console.log('Disconnected from server');
+  });
+
+  socket.on('chat-message', function(data) {
+    addMessageToUI(data);
+  });
+});
+  </script>
+</body>
+</html>
